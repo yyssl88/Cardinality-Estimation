@@ -22,8 +22,8 @@ input_file = sys.argv[1]        # queries: a file storing sets (delimiter = ' ')
 output_file = sys.argv[2]       # vectors
 
 b=2
-#k=256                           
-k= int(sys.argv[3])             # dimensions of vectors
+#k=256                           # dimensions of vectors
+k= int(sys.argv[3])                           # dimensions of vectors
 
 
 data = []
