@@ -1,4 +1,4 @@
-# code of Cardinality estimation of Similarity selection
+# Code of Cardinality Estimation of Similarity Selection
 
 
 
@@ -39,6 +39,7 @@ Download the above datasets and put them into the directory "real_data":
 ├── proc
 │   ├── covertree
 │   ├── randompartition
+│   ├── feature_extraction
 │   ├── shell
 │   └── train
 └── run
