@@ -130,7 +130,7 @@ We can run other datasets as the same with face.
 
 # Feature Extraction
 
-To handle strings with edit distance or Jaccard, we use the feature extraction part to transform strings to vectors.
+To handle strings with edit distance or sets with Jaccard, we use the feature extraction part to transform strings to vectors.
 
 ### Edit Distance
 
