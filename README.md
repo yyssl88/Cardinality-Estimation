@@ -144,7 +144,7 @@ cd ./proc/feature_extraction/ED
 * DATA: the path of the original dataset
 * alph: the path of alphabet set
 * maxlen: the maximum length of strings
-* instances: the path of training, validation or testing queries (or features except threshold)
+* instances: the path of training, validation or testing queries (string)
 * output_vectors: the path of output vectors that are transformed from strings
 
 ### Jaccard
@@ -158,7 +158,7 @@ cd ./proc/feature_extraction/Jacc
 python transfer_vector_minhash.py ${instances} ${output_vectors} ${dim}
 ```
 
-* instances: the path of training, validation or testing queries (or features except threshold)
+* instances: the path of training, validation or testing queries (set, delimiter=" ")
 * output_vectors: the path of output vectors that are transformed from strings
 * dim: the dimensions of output_vectors
 
