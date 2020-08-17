@@ -149,7 +149,10 @@ cd ./proc/feature_extraction/ED
 
 ### Jaccard
 
+need datasketch package. 
 ```
+pip install datasketch
+
 cd ./proc/feature_extraction/Jacc
 
 python transfer_vector_minhash.py ${instances} ${output_vectors} ${dim}
