@@ -1,4 +1,4 @@
-# SelNet for Cardinality estimation of Similarity selection
+# code of Cardinality estimation of Similarity selection
 
 
 
