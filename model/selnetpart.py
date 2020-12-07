@@ -171,7 +171,7 @@ class SelNetPart(object):
         ae_loss = recon_loss
         return ae_loss, hidden_z
 
-    def _construct_rhos(self, x_fea, x_fea_dr, expert_name):
+    def _construct_rhos_(self, x_fea, x_fea_dr, expert_name):
         '''
         :param x_fea:
         :param x_fea_dr:
@@ -242,6 +242,47 @@ class SelNetPart(object):
             gate = tf.concat([gate, rhos[hidden_id]], 2)
 
         return gate
+
+    def _construct_rhos(self, x_fea, x_fea_dr, expert_name):
+        '''
+        :param x_fea:
+        :param x_fea_dr:
+        :param tau: a matrix with N * num_deltataus
+        :return:
+        '''
+        # first concatenate X
+        new_x = tf.concat([x_fea, x_fea_dr], 1)
+
+        # concatenate new X with threshold embedding
+        # new_x_fea = new_x # tf.concat([new_x, tau_embed], 1)
+        new_x_fea = new_x #tf.concat([new_x, tau_embed], 1)
+
+        rhos = []
+        # fc layers
+        out = tf.layers.dense(inputs=new_x_fea, units=self.hidden_units[0],
+                              activation=tf.nn.relu, name=self.regressor_name + 'fc_1_' + expert_name)
+
+        out = tf.layers.dense(inputs=out, units=self.hidden_units[1],
+                              activation=tf.nn.relu, name=self.regressor_name + 'fc_2_' + expert_name)
+
+        out = tf.layers.dense(inputs=out, units=self.hidden_units[2],
+                              activation=tf.nn.relu, name=self.regressor_name + 'fc_3_' + expert_name)
+        # out = tf.nn.dropout(out, keep_prob=self.keep_prob, name=self.regressor_name + 'dropout')
+
+        out = tf.layers.dense(inputs=out, units=self.hidden_units[3],
+                              activation=tf.nn.relu, name=self.regressor_name + 'fc_4_' + expert_name)
+
+        # 4th embedding
+        rho_4 = tf.layers.dense(inputs=out, units=self.unit_len * (self.tau_part_num + 1),
+                            activation=tf.nn.relu, name=self.regressor_name + 'embed_4_' + expert_name)
+
+        # reshape 3rd embedding
+        rho_4 = tf.reshape(rho_4, [-1, self.tau_part_num + 1, self.unit_len])
+
+        gate = rho_4
+
+        return gate
+
 
     def _partition_threshold(self, x_fea, x_fea_dr, tau, expert_name, eps=0.0000001):
         new_x = tf.concat([x_fea, x_fea_dr], 1)
