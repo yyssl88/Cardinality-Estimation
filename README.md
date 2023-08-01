@@ -23,6 +23,15 @@ Download the above datasets and put them into the directory "real_data":
 * fasttext_originalData.npy     ->  ./data/fasttext_eu/real_data/fasttext_eu_originalData.npy
 * youtube_originalData.npy      ->  ./data/youtube/real_data/youtube_originalData.npy
 
+### !!! For new datasets
+
+When new datasets are used, there are two important hyper-parameters that need to be manually set in the source code.
+
+- **max_tau**: the maximum value of thresholds. SelNet only accepts thresholds within [0, max_tau]. We need to transform thresholds in the training and testing data into the range [0, max_tau], otherwise SelNet
+  would automatically map thresholds that are larger than max_tau to [0, max_tau], and the performance would be very bad because SelNet considers the monotonic property in the first priority.
+
+- **tau_part_num**: the number of used knot points (or piecewise linear functions) in [0, max_tau]. 
+
 # Structure
 ```
 .
