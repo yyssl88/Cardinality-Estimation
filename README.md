@@ -25,12 +25,14 @@ Download the above datasets and put them into the directory "real_data":
 
 ### !!! For new datasets
 
-When new datasets are used, there are two important hyper-parameters that need to be manually set in the source code.
+When new datasets are used, there are three important hyper-parameters that need to be manually set in the source code.
 
 - **max_tau**: the maximum value of thresholds. SelNet only accepts thresholds within [0, max_tau]. We need to transform thresholds in the training and testing data into the range [0, max_tau], otherwise SelNet
   would automatically map thresholds that are larger than max_tau to [0, max_tau], and the performance would be very bad because SelNet considers the monotonic property in the first priority.
 
-- **tau_part_num**: the number of used knot points (or piecewise linear functions) in [0, max_tau]. 
+- **tau_part_num**: the number of used knot points (or piecewise linear functions) in [0, max_tau].
+
+- **epochs**: the maximum number of epochs. A small value of epochs is enough and the model will converge soon.
 
 # Structure
 ```
@@ -69,6 +71,8 @@ When new datasets are used, there are two important hyper-parameters that need t
 # Run
 
 Here use **face** dataset as example.
+
+Notice currently the hyper-parameter "epochs" in the source code is set as the maximum value, i.e., 1500, but there is no need to train with so many epochs.
 
 ## 1. Generating training data
 
