@@ -17,7 +17,7 @@ import pickle
 from sklearn.decomposition import PCA
 from sklearn.metrics import *
 #from tensorflow.python.framework import ops
-#from sklearn.cross_validation import train_test_split
+from sklearn.cross_validation import train_test_split
 
 #from deepautoencoder import StackedAutoEncoder
 
@@ -168,7 +168,6 @@ class SelNet(object):
         ae_loss = recon_loss
         return ae_loss, hidden_z #tf.cond(self.vae_option > 0, hidden_z, z_mu) #hidden_z
 
-
     def _construct_rhos(self, x_fea, x_fea_dr):
         '''
         :param x_fea:
@@ -275,25 +274,6 @@ class SelNet(object):
 
         return precent_tau
 
-    def _construct_model_(self, x_fea, x_fea_dr, tau):
-        gate = self._construct_rhos(x_fea, x_fea_dr)
-        # integrate
-        w_t = tf.get_variable(self.regressor_name + 'w_t_', [self.tau_part_num + 1, self.unit_len], tf.float32)
-        b_t = tf.get_variable(self.regressor_name + 'b_t_', [self.tau_part_num + 1], tf.float32)
-        gate = tf.multiply(gate, w_t)
-        gate = tf.reduce_sum(gate, 2)
-        gate = tf.nn.relu(gate + b_t)
-        # gate = tf.nn.elu(gate + b_t) + 1
-        # narrow down the domain of Delta Y
-        tau_gate = self._partition_threshold(x_fea, x_fea_dr, tau)
-        gate = tf.multiply(gate, tau_gate)
-
-        prediction = tf.reduce_sum(gate, 1)
-        # expand dim
-        prediction = tf.expand_dims(prediction, 1)
-
-        return prediction, gate
- 
 
     def _construct_model(self, x_fea, x_fea_dr, tau):
 
@@ -510,7 +490,6 @@ class SelNet(object):
             loss = loss + 0.1 * loss_nn + tf.losses.huber_loss(labels=target, predictions=predictions_tensor, delta=1.345)
         elif self.loss_type == 'huber_log':
             loss = loss + 0.1 * loss_nn + tf.losses.huber_loss(labels=tf.log(target + 1), predictions=tf.log(predictions_tensor + 1), delta=1.345)
-            #loss = loss + 0.1 * loss_nn + tf.losses.huber_loss(labels=tf.log(target + 1e-5), predictions=tf.log(predictions_tensor + 1e-5), delta=3.345)
         elif self.loss_type == 'huber_log_opt':
             # calculate the median value
             residue = tf.log(target + 1) - tf.log(predictions_tensor + 1)
@@ -572,27 +551,9 @@ class SelNet(object):
 
             # 2. fit all the training data to estimate
             learning_rate_nn_ = self.learning_rate
-            epoch_decay_start = 50
+            epoch_decay_start = 100
             decay_rate, decay_step = 0.96, 10
             for i in range(self.epochs):
-                # shuffle the data
-                if len(train_X) < 2500000:
-                    # old version
-                    np.random.seed(i * 1000)
-                    np.random.shuffle(train_X)
-                    np.random.seed(i * 1000)
-                    np.random.shuffle(train_tau)
-                    np.random.seed(i * 1000)
-                    np.random.shuffle(train_y)
-                else:
-                    # new version
-                    scTrain = np.arange(len(train_X))
-                    np.random.seed(i * 1000)
-                    np.random.shuffle(scTrain)
-                    train_X = train_X[scTrain]
-                    train_tau = train_tau[scTrain]
-                    train_y = train_y[scTrain]
-
                 n_batches = int(train_X.shape[0] / self.batch_size) + 1
                 for b in range(n_batches):
                     # get current batch
@@ -614,7 +575,7 @@ class SelNet(object):
 
                     # check points
                     if b % 50 == 0:
-                        [eval_loss, train_inference] = sess.run([loss, predictions_tensor], feed_dict={x_input: batch_original_X,
+                        eval_loss = sess.run(loss, feed_dict={x_input: batch_original_X,
                                                     tau_input: batch_tau,
                                                     #target: batch_y[:, -1][:, np.newaxis],
                                                     #target_taus: batch_y[:, :-1],
@@ -624,7 +585,7 @@ class SelNet(object):
                                                     self.keep_prob: 1.0,
                                                     self.input_num: self.batch_size,
                                                     self.vae_option: 1})
-                        print('Epoch: {}, batch: {}, loss: {}, loss_: {}'.format(i, b, eval_loss, __eval__(np.hstack(train_inference), np.hstack(batch_y[:, -1]))))
+                        print('Epoch: {}, batch: {}, loss: {}'.format(i, b, eval_loss))
 
                         # write training log
                         #train_writer.add_summary(summary, global_step=step)
@@ -636,11 +597,11 @@ class SelNet(object):
                     learning_rate_nn_ = learning_rate_nn_ * (decay_rate ** ((i - epoch_decay_start) / decay_step))
 
                 # save the model
-                if i % 1 == 0 or ((i + 1) == self.epochs):
+                if i % 100 == 0 or ((i + 1) == self.epochs):
                     saver.save(sess, save_path=self.model_file, global_step=i)
 
                 # evaluate for testing data
-                if i % 1 == 0 or ((i + 1) == self.epochs):
+                if i % 10 == 0 or ((i + 1) == self.epochs):
                     '''
                     # test !!!
                     # split original X, dimreduce X, and threshold
@@ -842,13 +803,6 @@ class SelNet(object):
             epoch_decay_start = 100
             decay_rate, decay_step = 0.96, 10
             for i in range(self.epochs):
-                # shuffle the data
-                np.random.seed(i * 1000)
-                np.random.shuffle(train_X)
-                np.random.seed(i * 1000)
-                np.random.shuffle(train_tau)
-                np.random.seed(i * 1000)
-                np.random.shuffle(train_y)
                 n_batches = int(train_X.shape[0] / self.batch_size) + 1
                 # sample some batches
                 batch_num_ratio = 0.3
@@ -1052,28 +1006,3 @@ class SelNet(object):
         return batch_X, batch_tau, batch_y
 
 
-    def getBatch_random_(self, seed, batch_size, trainFeatures, trainTau, trainLabels):
-        train_num = trainFeatures.shape[0]
-        #start_index = (batch_id * batch_size) % train_num
-        #end_index = start_index + batch_size
-        np.random.seed(seed)
-        sc = np.random.choice(train_num, batch_size, replace=False)
-
-        batch_X = trainFeatures[sc]
-        batch_tau = trainTau[sc]
-        batch_y = trainLabels[sc]
-
-        if batch_X.shape[0] < batch_size:
-            ''' If reach the end of data
-            '''
-            L = batch_size - batch_X.shape[0]
-            batch_X = np.concatenate((batch_X, trainFeatures[:L]), axis=0)
-            batch_tau = np.concatenate((batch_tau, trainTauGate[:L]), axis=0)
-            batch_y = np.concatenate((batch_y, trainLabels[:L]), axis=0)
-
-
-        # if Y is a vector, transfer to [None, 1]
-        if len(batch_y.shape) <= 1:
-            batch_y = batch_y[:, np.newaxis]
-
-        return batch_X, batch_tau, batch_y

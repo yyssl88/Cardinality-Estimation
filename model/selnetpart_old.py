@@ -14,7 +14,7 @@ import pickle
 from sklearn.decomposition import PCA
 from sklearn.metrics import *
 #from tensorflow.python.framework import ops
-#from sklearn.cross_validation import train_test_split
+from sklearn.cross_validation import train_test_split
 
 #from deepautoencoder import StackedAutoEncoder
 
@@ -565,31 +565,10 @@ class SelNetPart(object):
 
             # 2. fit all the training data to estimate
             learning_rate_nn_ = self.learning_rate
-            epoch_decay_start = 10 # 200
+            epoch_decay_start = 200
             epoch_one = 100
             decay_rate, decay_step = 0.96, 10
             for i in range(self.epochs):
-                # shuffle the data
-                if len(train_X) < 2500000:
-                    # old version
-                    np.random.seed(i * 1000)
-                    np.random.shuffle(train_X)
-                    np.random.seed(i * 1000)
-                    np.random.shuffle(train_tau_gate)
-                    np.random.seed(i * 1000)
-                    np.random.shuffle(train_mapping)
-                    np.random.seed(i * 1000)
-                    np.random.shuffle(train_y)
-                else:
-                    # new version
-                    scTrain = np.arange(len(train_X))
-                    np.random.seed(i * 1000)
-                    np.random.shuffle(scTrain)
-                    train_X = train_X[scTrain]
-                    train_tau_gate = train_tau_gate[scTrain]
-                    train_mapping = train_mapping[scTrain]
-                    train_y = train_y[scTrain]
-
                 n_batches = int(train_X.shape[0] / self.batch_size) + 1
                 for b in range(n_batches):
                     # get current batch
@@ -618,7 +597,7 @@ class SelNetPart(object):
 
                     # check points
                     if b % 50 == 0:
-                        [eval_loss, eval_loss_one, train_inference] = sess.run([loss, loss_one, predictions_tensor], feed_dict={x_input: batch_original_X,
+                        [eval_loss, eval_loss_one] = sess.run([loss, loss_one], feed_dict={x_input: batch_original_X,
                                                                 init_indices: batch_init_indices,
                                                                 mapping: batch_mapping,
                                                                 tau_input: batch_tau_gate,
@@ -627,22 +606,22 @@ class SelNetPart(object):
                                                                 self.keep_prob: 1.0,
 						                self.vae_option: 1.0,
                                                                 self.input_num: self.batch_size})
-                        print('Epoch: {}, batch: {}, loss: {}, loss_: {}'.format(i, b, eval_loss, __eval__(np.hstack(train_inference), np.hstack(batch_y[:, -1]))))
+                        print('Epoch: {}, batch: {}, loss: {}'.format(i, b, eval_loss))
 
                     step += 1
 
                 if i == epoch_decay_start:
-                    learning_rate_nn_ /= 5.0
+                    learning_rate_nn_ /= 4.0
                 if i > epoch_decay_start and (i % decay_step == 0):
                     learning_rate_nn_ = learning_rate_nn_ * (decay_rate ** ((i - epoch_decay_start) / decay_step))
 
                 # save the model
-                if i % 1 == 0 or ((i + 1) == self.epochs):
+                if i % 100 == 0 or ((i + 1) == self.epochs):
                     saver.save(sess, save_path=self.model_file, global_step=i)
 
 
                 # evaluate for testing data
-                if (i % 1 == 0) or ((i + 1) == self.epochs):
+                if (i % 10 == 0) or ((i + 1) == self.epochs):
                     '''
                     # test !!!
                     # split original X, dimreduce X, and threshold
